@@ -36,6 +36,7 @@ SSH_PORT = 22
 INSTANCE_RESOURCE_NAME = "inst"
 SERVER_GROUP_NAMES = "servgroups"
 AUTO_SECURITY_GROUP_PARAM_NAME = "autosecgroup"
+INTERNAL_SECURITY_GROUP_PARAM_NAME = "internalsecgroup"
 INTERNAL_DESIGNATE_REC = "internal_designate_record"
 INTERNAL_DESIGNATE_REV_REC = "internal_designate_reverse_record"
 EXTERNAL_DESIGNATE_REC = "external_designate_record"
@@ -261,7 +262,7 @@ class ClusterStack(object):
 
         for ng in self.cluster.node_groups:
             resources.update(self._serialize_auto_security_group(ng))
-
+            resources.update(self._serialize_internal_security_group(ng))
         return resources
 
     def _serialize_ng_group(self, ng, outputs, instances_to_delete=None):
@@ -285,6 +286,9 @@ class ClusterStack(object):
         if ng.auto_security_group:
             properties[AUTO_SECURITY_GROUP_PARAM_NAME] = {
                 'get_resource': g.generate_auto_security_group_name(ng)}
+            properties[INTERNAL_SECURITY_GROUP_PARAM_NAME] = {
+                'get_resource': "%s-%s" % (ng.cluster.name.lower(),
+                                           'internal')}
 
         removal_policies = []
         if self.node_groups_extra[ng.id]['instances_to_delete']:
@@ -316,6 +320,7 @@ class ClusterStack(object):
 
         if ng.auto_security_group:
             parameters[AUTO_SECURITY_GROUP_PARAM_NAME] = {'type': "string"}
+            parameters[INTERNAL_SECURITY_GROUP_PARAM_NAME] = {'type': "string"}
 
         return yaml.safe_dump({
             "heat_template_version": heat_common.HEAT_TEMPLATE_VERSION,
@@ -352,6 +357,36 @@ class ClusterStack(object):
                 "type": res_type,
                 "properties": {
                     desc_key: security_group_description,
+                    rules_key: rules
+                }
+            }
+        }
+
+    def _serialize_internal_security_group(self, ng):
+        # Allow all ports traffic among each instance of cluster.
+        if not ng.auto_security_group:
+            return {}
+        security_group_name = "%s-%s" % (ng.cluster.name.lower(), 'internal')
+        rules = []
+
+        res_type = "OS::Neutron::SecurityGroup"
+        rules_key = "rules"
+        create_rule = lambda ip_version, proto, from_port, to_port: {
+            "ethertype": "IPv{}".format(ip_version),
+            "remote_mode": "remote_group_id",
+            "protocol": proto,
+            "port_range_min": six.text_type(from_port),
+            "port_range_max": six.text_type(to_port)}
+
+        for protocol in ['tcp', 'udp']:
+            rules.append(create_rule('4', protocol, 1, 65535))
+        rules.append(create_rule('4', 'icmp', 0, 255))
+
+        return {
+            security_group_name: {
+                "type": res_type,
+                "properties": {
+                    "description": "Nectar internal secgroup within cluster",
                     rules_key: rules
                 }
             }
@@ -466,12 +501,14 @@ class ClusterStack(object):
         if self.cluster.user_keypair_id:
             properties["key_name"] = self.cluster.user_keypair_id
 
-        port_name = _get_port_name(ng)
-
-        resources.update(self._serialize_port(
-            port_name, private_net, sec_groups))
-
-        properties["networks"] = [{"port": {"get_resource": "port"}}]
+        if private_net == "00000000-0000-0000-0000-000000000000":
+            properties["networks"] = [{"network": private_net}]
+            properties["security_groups"] = sec_groups
+        else:
+            port_name = _get_port_name(ng)
+            resources.update(self._serialize_port(
+                port_name, private_net, sec_groups))
+            properties["networks"] = [{"port": {"get_resource": "port"}}]
 
         if ng.floating_ip_pool:
             resources.update(self._serialize_neutron_floating(ng))
@@ -642,7 +679,8 @@ class ClusterStack(object):
         node_group_sg = list(node_group.security_groups or [])
         if node_group.auto_security_group:
             node_group_sg += [
-                {"get_param": AUTO_SECURITY_GROUP_PARAM_NAME}
+                {"get_param": AUTO_SECURITY_GROUP_PARAM_NAME},
+                {"get_param": INTERNAL_SECURITY_GROUP_PARAM_NAME}
             ]
         return node_group_sg
 
