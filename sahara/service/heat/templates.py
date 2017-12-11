@@ -462,12 +462,14 @@ class ClusterStack(object):
         if self.cluster.user_keypair_id:
             properties["key_name"] = self.cluster.user_keypair_id
 
-        port_name = _get_port_name(ng)
-
-        resources.update(self._serialize_port(
-            port_name, private_net, sec_groups))
-
-        properties["networks"] = [{"port": {"get_resource": "port"}}]
+        if private_net == "00000000-0000-0000-0000-000000000000":
+            properties["networks"] = [{"network": private_net}]
+            properties["security_groups"] = sec_groups
+        else:
+            port_name = _get_port_name(ng)
+            resources.update(self._serialize_port(
+                port_name, private_net, sec_groups))
+            properties["networks"] = [{"port": {"get_resource": "port"}}]
 
         if ng.floating_ip_pool:
             resources.update(self._serialize_neutron_floating(ng))
