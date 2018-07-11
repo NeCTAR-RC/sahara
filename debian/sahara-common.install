@@ -1,0 +1,5 @@
+/usr/bin/*
+usr/etc/sahara/api-paste.ini etc/sahara
+usr/etc/sahara/rootwrap.conf etc/sahara
+usr/etc/sahara/rootwrap.d/sahara.filters etc/sahara/rootwrap.d
+usr/etc/sahara/sahara.conf etc/sahara
