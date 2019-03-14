@@ -1,0 +1,19 @@
+#!/bin/sh
+
+set -e
+
+if [ "$1" = "configure" ] ; then
+	update-alternatives --install /usr/bin/_sahara-subprocess _sahara-subprocess /usr/bin/python3-_sahara-subprocess 200
+	update-alternatives --install /usr/bin/sahara-all sahara-all /usr/bin/python3-sahara-all 200
+	update-alternatives --install /usr/bin/sahara-api sahara-api /usr/bin/python3-sahara-api 200
+	update-alternatives --install /usr/bin/sahara-db-manage sahara-db-manage /usr/bin/python3-sahara-db-manage 200
+	update-alternatives --install /usr/bin/sahara-engine sahara-engine /usr/bin/python3-sahara-engine 200
+	update-alternatives --install /usr/bin/sahara-image-pack sahara-image-pack /usr/bin/python3-sahara-image-pack 200
+	update-alternatives --install /usr/bin/sahara-rootwrap sahara-rootwrap /usr/bin/python3-sahara-rootwrap 200
+	update-alternatives --install /usr/bin/sahara-templates sahara-templates /usr/bin/python3-sahara-templates 200
+	update-alternatives --install /usr/bin/sahara-wsgi-api sahara-wsgi-api /usr/bin/python3-sahara-wsgi-api 200
+fi
+
+#DEBHELPER#
+
+exit 0

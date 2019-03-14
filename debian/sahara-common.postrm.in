@@ -1,0 +1,17 @@
+#!/bin/sh
+
+set -e
+
+#PKGOS-INCLUDE#
+
+if [ "$1" = "purge" ] && [ -f /usr/share/debconf/confmodule ] ; then
+	pkgos_dbc_postrm sahara sahara-common $@
+
+	rm -f /etc/sahara/sahara.conf
+	rmdir --ignore-fail-on-non-empty /etc/sahara || true
+	rm -rf /var/lib/sahara /var/log/sahara
+fi
+
+#DEBHELPER#
+
+exit 0

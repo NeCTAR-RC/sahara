@@ -1,0 +1,19 @@
+#!/bin/sh
+
+set -e
+
+if [ "$1" = "remove" ] || [ "$1" = "disappear" ] ; then
+	update-alternatives --remove _sahara-subprocess /usr/bin/python2-_sahara-subprocess
+	update-alternatives --remove sahara-all /usr/bin/python2-sahara-all
+	update-alternatives --remove sahara-api /usr/bin/python2-sahara-api
+	update-alternatives --remove sahara-db-manage /usr/bin/python2-sahara-db-manage
+	update-alternatives --remove sahara-engine /usr/bin/python2-sahara-engine
+	update-alternatives --remove sahara-image-pack /usr/bin/python2-sahara-image-pack
+	update-alternatives --remove sahara-rootwrap /usr/bin/python2-sahara-rootwrap
+	update-alternatives --remove sahara-templates /usr/bin/python2-sahara-templates
+	update-alternatives --remove sahara-wsgi-api /usr/bin/python2-sahara-wsgi-api
+fi
+
+#DEBHELPER#
+
+exit 0

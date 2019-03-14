@@ -1,0 +1,99 @@
+#!/usr/bin/make -f
+
+include /usr/share/openstack-pkg-tools/pkgos.make
+
+LAST_CHANGE = $(shell dpkg-parsechangelog -S Date)
+BUILD_DATE  = $(shell LC_ALL=C date -u "+%B %d, %Y" -d "$(LAST_CHANGE)")
+SPHINXOPTS := -D html_last_updated_fmt="$(BUILD_DATE)"
+
+%:
+	dh $@ --buildsystem=python_distutils --with apache2,python2,python3,sphinxdoc,systemd
+
+override_dh_clean:
+	rm -rf build 	debian/sahara-common.postinst \
+			debian/sahara-common.config \
+			debian/sahara-api.postinst \
+			debian/sahara-api.config
+	rm -rf doc/build
+	rm -f debian/*.init debian/*.service debian/*.upstart
+	dh_clean -O--buildsystem=python_distutils
+
+override_dh_auto_clean:
+	python2 setup.py clean
+	python3 setup.py clean
+
+override_dh_auto_build:
+	/usr/share/openstack-pkg-tools/pkgos_insert_include pkgos_func sahara-api.config
+	/usr/share/openstack-pkg-tools/pkgos_insert_include pkgos_func sahara-api.postinst
+	/usr/share/openstack-pkg-tools/pkgos_insert_include pkgos_func sahara-common.config
+	/usr/share/openstack-pkg-tools/pkgos_insert_include pkgos_func sahara-common.postinst
+	/usr/share/openstack-pkg-tools/pkgos_insert_include pkgos_postrm sahara-common.postrm
+	pkgos-merge-templates sahara-api sahara endpoint
+	pkgos-merge-templates sahara-common sahara db rabbit ksat
+
+override_dh_auto_install:
+	echo "Do nothing..."
+
+override_dh_install:
+	pkgos-dh_auto_install
+
+	rm -rf $(CURDIR)/debian/python-sahara/usr/etc
+	rm -rf $(CURDIR)/debian/python3-sahara/usr/etc
+
+ifeq (,$(findstring nocheck, $(DEB_BUILD_OPTIONS)))
+	pkgos-dh_auto_test
+endif
+
+	# Install the config files.
+	mkdir -p $(CURDIR)/debian/sahara-common/usr/share/sahara-common
+	PYTHONPATH=$(CURDIR)/debian/python3-sahara/usr/lib/python3/dist-packages python3-oslo-config-generator \
+		--wrap-width 140 \
+		--namespace sahara.config \
+		--namespace keystonemiddleware.auth_token \
+		--namespace oslo.concurrency \
+		--namespace oslo.db \
+		--namespace oslo.log \
+		--namespace oslo.messaging \
+		--namespace oslo.middleware.cors \
+		--namespace oslo.middleware.http_proxy_to_wsgi \
+		--namespace oslo.policy \
+		--namespace oslo.service.periodic_task \
+		--namespace oslo.service.sslutils \
+		--namespace oslo.service.wsgi \
+		--output-file $(CURDIR)/debian/sahara-common/usr/share/sahara-common/sahara.conf
+	pkgos-readd-keystone-authtoken-missing-options $(CURDIR)/debian/sahara-common/usr/share/sahara-common/sahara.conf keystone_authtoken sahara
+
+	pkgos-fix-config-default $(CURDIR)/debian/sahara-common/usr/share/sahara-common/sahara.conf database connection sqlite:///var/lib/sahara/saharadb
+	pkgos-fix-config-default $(CURDIR)/debian/sahara-common/usr/share/sahara-common/sahara.conf oslo_concurrency lock_path /var/lock/sahara
+	pkgos-fix-config-default $(CURDIR)/debian/sahara-common/usr/share/sahara-common/sahara.conf keystone_authtoken auth_protocol http
+	pkgos-fix-config-default $(CURDIR)/debian/sahara-common/usr/share/sahara-common/sahara.conf keystone_authtoken password password
+
+	PYTHONPATH=$(CURDIR)/debian/python3-sahara/usr/lib/python3/dist-packages python3-oslopolicy-sample-generator \
+		--output-file $(CURDIR)/debian/sahara-common/usr/share/sahara-common/policy.json \
+		--format json \
+		--namespace sahara
+
+	mkdir -p $(CURDIR)/debian/sahara-common/etc/sahara
+	cp etc/sahara/compute.topology.sample $(CURDIR)/debian/sahara-common/etc/sahara/compute.topology
+	cp etc/sahara/swift.topology.sample $(CURDIR)/debian/sahara-common/etc/sahara/swift.topology
+	set -e ; for i in api-paste.ini rootwrap.conf rootwrap.d ; do \
+		cp -rfv etc/sahara/$$i $(CURDIR)/debian/sahara-common/etc/sahara ; \
+	done
+
+	dh_install
+	dh_missing --fail-missing
+
+override_dh_sphinxdoc:
+ifeq (,$(findstring nodocs, $(DEB_BUILD_OPTIONS)))
+	PYTHONPATH=. python3 -m sphinx $(SPHINXOPTS) -b html doc/source $(CURDIR)/debian/sahara-doc/usr/share/doc/sahara-doc/html
+	dh_sphinxdoc -O--buildsystem=python_distutils
+endif
+
+override_dh_installman:
+ifeq (,$(findstring nodocs, $(DEB_BUILD_OPTIONS)))
+	PYTHONPATH=. python3 -m sphinx $(SPHINXOPTS) -b man doc/source doc/build/man
+	dh_installman -O--buildsystem=python_distutils
+endif
+
+override_dh_python3:
+	dh_python3 --shebang=/usr/bin/python3

@@ -1,0 +1,47 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: Sahara
+Source: https://github.com/openstack/sahara
+
+Files: *
+Copyright: (c) 2010-2018, OpenStack Foundation
+           (c) 2013-2016, Mirantis
+           (c) 2013-2016, Red Hat Inc.
+           (c) 2013-2016, Hewlett-Packard Development Company, L.P.
+           (c) 2012-2014, AT&T Labs
+           (c) 2013-2014, Hortonworks, Inc.
+           (c) 2012-2016, Intel Corporation.
+           (c) 2014, Hoang Do, Phuc Vo, P. Michiardi, D. Venzano
+           (c) 2017, EasyStack Inc.
+           (c) 2015, ISPRAS
+           (c) 2017-2018, Massachusetts Open Cloud
+           (c) 2013, Julien Danjou <julien@danjou.info>
+           (c) 2015, MapR Technologies
+           (c) 2016, SUSE LINUX Products GmbH
+           (c) 2012-2013, IBM Corp.
+           (c) 2015, TellesNobrega
+           (c) 2012-2013, AT&T Labs, Yun Mao <yunmao@gmail.com>
+           (c) 2012, New Dream Network, LLC (DreamHost)
+           (c) 2014, Adrien Vergé <adrien.verge@numergy.com>
+           (c) 2015, Telles Nobrega
+           (c) Cloudera, Inc.
+License: Apache-2
+
+Files: debian/*
+Copyright: (c) 2014-2018, Thomas Goirand <zigo@debian.org>
+License: Apache-2
+
+License: Apache-2
+ Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ use this file except in compliance with the License. You may obtain a copy of
+ the License at:
+ .
+  http://www.apache.org/licenses/LICENSE-2.0
+ .
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ License for the specific language governing permissions and limitations under
+ the License.
+ .
+ On Debian-based systems the full text of the Apache version 2.0 license can be
+ found in /usr/share/common-licenses/Apache-2.0.

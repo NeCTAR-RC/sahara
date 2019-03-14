@@ -1,0 +1,19 @@
+#!/bin/bash
+#---------------------
+# Testing /usr/bin/sahara-* shebangs
+#---------------------
+set -e
+
+BINARIES=('_sahara-subprocess' 'sahara-all' 'sahara-api' 'sahara-db-manage' \
+          'sahara-engine' 'sahara-image-pack' 'sahara-rootwrap' \
+          'sahara-templates' 'sahara-wsgi-api')
+
+ret=0
+
+for binary in "${BINARIES[@]}"; do
+    if ! `dirname $0`/test-shebang.py $binary python2.7; then
+        ret=1
+    fi
+done
+
+exit $ret

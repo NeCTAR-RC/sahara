@@ -1,0 +1,6 @@
+# These are false positives: these scripts are templates
+# with some variables.
+python3-sahara: shell-script-fails-syntax-check
+python3-sahara: script-not-executable
+# This as well, is for the VMs, not sahara
+python3-sahara: python-script-but-no-python-dep
